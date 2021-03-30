@@ -59,9 +59,7 @@ def test_TrainLinkPredictionDataset():
     node_features = np.random.randn(4, 2)
     nodes = np.array([2])
 
-    dataset = GeneDatasets.TrainLinkPredictionDataset(
-        edges, nodes, node_features
-    )
+    dataset = GeneDatasets.TrainLinkPredictionDataset(edges, nodes, node_features)
     assert len(dataset) == 3
 
     batch = dataset[0]

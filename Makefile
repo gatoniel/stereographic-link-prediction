@@ -2,9 +2,11 @@ SHELL:=/usr/bin/env bash
 
 .PHONY: lint
 lint:
-	poetry run mypy stereographic_link_prediction tests/**/*.py
-	poetry run flake8 .
-	poetry run doc8 -q docs
+	poetry run black --check --diff stereographic_link_prediction tests
+
+.PHONY: black
+black:
+	poetry run black stereographic_link_prediction tests
 
 .PHONY: unit
 unit:
@@ -13,9 +15,6 @@ unit:
 .PHONY: package
 package:
 	poetry check
-	poetry run pip check
-	poetry run safety check --full-report
 
 .PHONY: test
 test: lint package unit
-
