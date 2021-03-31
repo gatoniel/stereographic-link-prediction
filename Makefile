@@ -10,7 +10,7 @@ black:
 
 .PHONY: unit
 unit:
-	poetry run pytest
+	poetry run pytest stereographic_link_prediction tests
 
 .PHONY: package
 package:

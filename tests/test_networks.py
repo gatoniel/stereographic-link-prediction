@@ -52,7 +52,8 @@ def test_adam_LayerDist2Plane():
         optim.zero_grad()
         x = ball.random(100, latent_dim)  # .double()
         y = (
-            ball.dist2plane(x, ideal_point, -ideal_point, signed=True) + ideal_bias
+            ball.dist2plane(x, ideal_point, -ideal_point, signed=True)
+            + ideal_bias
         ).transpose(1, 0)
         loss = torch.mean((layer(x) - y) ** 2)
         loss.backward()
@@ -60,20 +61,23 @@ def test_adam_LayerDist2Plane():
 
     optim = geoopt.optim.RiemannianAdam(layer.parameters(), lr=1e-2)
 
-    for _ in range(10000):
-        optim.step(closure)
+    for _ in range(20):
+        for _ in range(1000):
+            optim.step(closure)
 
-    distance1 = ball.dist2plane(
-        ideal_point[0, ...], layer.point.detach(), layer.direction.detach()
-    )
-    distance2 = ball.dist2plane(layer.point.detach(), ideal_point, -ideal_point)
-    distances = np.array([distance1.item(), distance2.item()])
+        distance1 = ball.dist2plane(
+            ideal_point[0, ...], layer.point.detach(), layer.direction.detach()
+        )
+        distance2 = ball.dist2plane(
+            layer.point.detach(), ideal_point, -ideal_point
+        )
+        distances = np.array([distance1.item(), distance2.item()])
+        if np.allclose(distances, np.zeros(2), atol=1e-2, rtol=1e-2):
+            break
+
     np.testing.assert_allclose(distances, np.zeros(2), atol=1e-2, rtol=1e-2)
-    # np.testing.assert_allclose(
-    #     ideal_weight.cpu(), layer.weight.detach().cpu(), atol=1e-5, rtol=1e-5
-    # )
     np.testing.assert_allclose(
-        ideal_bias.cpu(), layer.bias.detach().cpu(), atol=1e-5, rtol=1e-5
+        ideal_bias.cpu(), layer.bias.detach().cpu(), atol=1e-2, rtol=1e-2
     )
 
 
