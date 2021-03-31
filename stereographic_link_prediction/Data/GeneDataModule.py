@@ -30,7 +30,7 @@ def simplify_protein(p):
 def split_edges(edges: np.array, train: float = 0.8, val: float = 0.1):
     length = edges.shape[0]
     train = floor(train * length)
-    val = floor(val * length)
+    val = train + floor(val * length)
 
     indices = np.random.permutation(edges.shape[0])
     t_inds = indices[:train]
@@ -46,8 +46,7 @@ class BacillusSubtilisSwarming(pl.LightningDataModule):
         data_dir: str,
         replica: int = 1,
         *,
-        batch_size: int = 1,
-        batch_size_valid: int = 1,
+        batch_size: int = 64,
         num_workers: int = 8,
     ):
         super().__init__()
@@ -55,7 +54,6 @@ class BacillusSubtilisSwarming(pl.LightningDataModule):
         self.replica = replica
 
         self.batch_size = batch_size
-        self.batch_size_valid = batch_size_valid
         self.num_workers = num_workers
 
     def prepare_data(self):
@@ -128,7 +126,7 @@ class BacillusSubtilisSwarming(pl.LightningDataModule):
     def val_dataloader(self):
         return DataLoader(
             self.valid_dataset,
-            batch_size=self.batch_size_valid,
+            batch_size=self.batch_size,
             num_workers=self.num_workers,
             pin_memory=True,
         )
@@ -136,7 +134,7 @@ class BacillusSubtilisSwarming(pl.LightningDataModule):
     def test_dataloader(self):
         return DataLoader(
             self.test_dataset,
-            batch_size=self.batch_size_valid,
+            batch_size=self.batch_size,
             num_workers=self.num_workers,
             pin_memory=True,
         )

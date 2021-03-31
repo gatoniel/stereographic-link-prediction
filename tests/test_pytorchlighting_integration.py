@@ -1,3 +1,5 @@
+from argparse import ArgumentParser
+import torch.multiprocessing
 from types import SimpleNamespace
 import pytorch_lightning as pl
 
@@ -7,9 +9,12 @@ from stereographic_link_prediction.Data.GeneDataModule import (
 from stereographic_link_prediction.Models.Modules import LinkPredictionModule
 
 pl.seed_everything(42)
+torch.multiprocessing.set_sharing_strategy("file_system")
 
 
 def test_fast_dev_run():
+    parser = ArgumentParser()
+    parser = LinkPredictionModule.add_model_specific_args(parser)
     hparams = SimpleNamespace(
         encoder_layers=4,
         encoder_hidden_dim=100,
@@ -30,3 +35,5 @@ def test_fast_dev_run():
     module = LinkPredictionModule(hparams, datamodule)
 
     trainer = pl.Trainer(fast_dev_run=True, precision=32)
+    trainer.fit(module, datamodule=datamodule)
+    trainer.test(module, datamodule=datamodule)

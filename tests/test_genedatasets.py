@@ -1,6 +1,13 @@
 import numpy as np
 
-from stereographic_link_prediction.Data import GeneDatasets
+from stereographic_link_prediction.Data import GeneDatasets, GeneDataModule
+
+
+def test_split_edges():
+    x = np.random.randn(100, 2)
+    x1, x2, x3 = GeneDataModule.split_edges(x)
+    assert x1.shape == (80, 2)
+    assert x2.shape == x3.shape == (10, 2)
 
 
 def test_ValLinPredictionDataset():
@@ -9,7 +16,7 @@ def test_ValLinPredictionDataset():
             [0, 1, 0],
             [0, 2, 0],
             [2, 0, 1],
-        ]
+        ],
     )
     connection_matrix = np.stack(
         (
@@ -35,7 +42,7 @@ def test_ValLinPredictionDataset():
         axis=-1,
     ).reshape(-1, 3)
 
-    node_features = np.random.randn(3, 2)
+    node_features = np.random.randn(3, 2).astype(np.float32)
 
     dataset = GeneDatasets.ValLinkPredictionDataset(edges, node_features)
     np.testing.assert_array_equal(dataset.connection_matrix, connection_matrix)
@@ -56,7 +63,7 @@ def test_TrainLinkPredictionDataset():
             [1, 3, 0],
         ]
     )
-    node_features = np.random.randn(4, 2)
+    node_features = np.random.randn(4, 2).astype(np.float32)
     nodes = np.array([2])
 
     dataset = GeneDatasets.TrainLinkPredictionDataset(edges, nodes, node_features)

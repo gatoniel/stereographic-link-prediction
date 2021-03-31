@@ -17,7 +17,7 @@ class TrainLinkPredictionDataset(Dataset):
 
         self.edges = edges
         self.nodes = np.random.permutation(nodes)
-        self.node_features = node_features
+        self.node_features = node_features.astype(np.float32)
 
         self.edges_len = edges.shape[0]
         self.nodes_len = nodes.shape[0]
@@ -56,7 +56,7 @@ class ValLinkPredictionDataset(Dataset):
         assert edges.ndim == node_features.ndim == 2
 
         self.edges = edges
-        self.node_features = node_features
+        self.node_features = node_features.astype(np.float32)
 
         total_num_nodes = self.node_features.shape[0]
         connection_matrix = -np.ones((total_num_nodes, total_num_nodes), dtype=int)

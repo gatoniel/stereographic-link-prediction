@@ -31,7 +31,7 @@ class LinkPredictionModule(pl.LightningModule):
     ):
         super().__init__()
         self.save_hyperparameters()
-        self.dm = datamodule
+        self.datamodule = datamodule
         self.input_dim = datamodule.input_dim
         self.output_dim = datamodule.output_dim
 
@@ -43,6 +43,7 @@ class LinkPredictionModule(pl.LightningModule):
         manifolds = tuple((m for m in manifolds if m[1] > 0))
         self.manifold = StereographicProductManifold(*manifolds)
         self.latent_dim = sum([m[1] for m in manifolds])
+        self.learning_rate = hparams.learning_rate
 
         self.encoder = EncoderWrapped(
             self.input_dim,
@@ -105,7 +106,7 @@ class LinkPredictionModule(pl.LightningModule):
         x = torch.cat((x1, x2, x3), axis=0)
 
         mean, std = self(x)
-        z = self.manifold.wrapped_normal(mean, std)
+        z = self.manifold.wrapped_normal(mean, std, mean.shape)
         z1, z2, z3 = torch.chunk(z, 3, dim=0)
         x3_ = self.decoder(z3)
 
@@ -130,7 +131,7 @@ class LinkPredictionModule(pl.LightningModule):
         mean, _ = self(x)
         z1, z2 = torch.chunk(mean, 2, dim=0)
 
-        pred1 = F.softmax(self.discriminator(z1, z2))
+        pred1 = F.softmax(self.discriminator(z1, z2), dim=-1)
 
         return {"i1": i1, "pred1": pred1, "y": y}
 
@@ -146,7 +147,7 @@ class LinkPredictionModule(pl.LightningModule):
             self.__dict__[name](
                 outputs["i1"], outputs["pred1"][:, i], outputs["y"] == i
             )
-            self.log(name, self.__dict__[name])
+            self.log(name, self.__dict__[name].compute())
 
     def validation_step_end(self, outputs):
         self.shared_val_step_end(outputs, "val")
@@ -155,6 +156,4 @@ class LinkPredictionModule(pl.LightningModule):
         self.shared_val_step_end(outputs, "test")
 
     def configure_optimizers(self):
-        return geoopt.optim.RiemannianAdam(
-            self.parameters(), lr=self.hparams.learning_rate
-        )
+        return geoopt.optim.RiemannianAdam(self.parameters(), lr=self.learning_rate)

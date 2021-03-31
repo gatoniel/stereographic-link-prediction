@@ -16,5 +16,9 @@ unit:
 package:
 	poetry check
 
+.PHONY: pl_test
+pl_test:
+	poetry run python pl_tests/main.py
+
 .PHONY: test
 test: lint package unit

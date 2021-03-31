@@ -68,7 +68,7 @@ def test_adam_LayerDist2Plane():
     )
     distance2 = ball.dist2plane(layer.point.detach(), ideal_point, -ideal_point)
     distances = np.array([distance1.item(), distance2.item()])
-    np.testing.assert_allclose(distances, np.zeros(2), atol=1e-5, rtol=1e-5)
+    np.testing.assert_allclose(distances, np.zeros(2), atol=1e-2, rtol=1e-2)
     # np.testing.assert_allclose(
     #     ideal_weight.cpu(), layer.weight.detach().cpu(), atol=1e-5, rtol=1e-5
     # )
