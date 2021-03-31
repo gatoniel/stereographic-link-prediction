@@ -10,7 +10,12 @@ from geoopt import (
     SphereProjection,
     Stereographic,
 )
-from torchmetrics import RetrievalMAP, RetrievalPrecision, MetricCollection
+from torchmetrics import (
+    RetrievalMAP,
+    RetrievalPrecision,
+    MetricCollection,
+    MeanAbsoluteError,
+)
 
 from .Networks import (
     EncoderWrapped,
@@ -68,14 +73,23 @@ class LinkPredictionModule(pl.LightningModule):
 
         self.reconstruction_loss = nn.MSELoss()
         self.discrimination_loss = nn.CrossEntropyLoss()
-        self.inv_y = torch.tensor((self.output_dim - 1))
+        self.register_buffer(
+            "inv_y", torch.tensor((self.output_dim - 1)), persistent=False
+        )
 
+        self.metrics = nn.ModuleDict()
         for i in range(self.output_dim - 1):
-            self.__dict__[f"val_{i}"] = MetricCollection(
-                [RetrievalMAP(), RetrievalPrecision(k=20)]
-            )
-            self.__dict__[f"test_{i}"] = MetricCollection(
-                [RetrievalMAP(), RetrievalPrecision(k=20)]
+            self.metrics.update(
+                {
+                    # f"val_{i}_MAP": MeanAbsoluteError(),
+                    # f"test_{i}_MAP": MeanAbsoluteError(),
+                    # f"val_{i}_Precision": MeanAbsoluteError(),
+                    # f"test_{i}_Precision": MeanAbsoluteError(),
+                    f"val_{i}_MAP": RetrievalMAP(),
+                    f"test_{i}_MAP": RetrievalMAP(),
+                    f"val_{i}_Precision": RetrievalPrecision(),
+                    f"test_{i}_Precision": RetrievalPrecision(),
+                }
             )
 
     @staticmethod
@@ -119,11 +133,14 @@ class LinkPredictionModule(pl.LightningModule):
         discr_inv_loss = self.discrimination_loss(
             pred_inv, self.inv_y.repeat(pred_inv.shape[0])
         )
+        loss = rec_loss + discr_loss + discr_inv_loss
+
+        self.log("train_loss", loss)
         self.log("train_rec", rec_loss)
         self.log("train_discr", discr_loss)
         self.log("train_discr_inv", discr_inv_loss)
 
-        return rec_loss + discr_loss + discr_inv_loss
+        return loss
 
     def shared_val_step(self, batch, batch_idx):
         x1, x2, y, i1 = batch
@@ -143,17 +160,33 @@ class LinkPredictionModule(pl.LightningModule):
 
     def shared_val_step_end(self, outputs, name_):
         for i in range(self.output_dim - 1):
-            name = f"{name_}_{i}"
-            self.__dict__[name](
-                outputs["i1"], outputs["pred1"][:, i], outputs["y"] == i
-            )
-            self.log(name, self.__dict__[name].compute())
+            for t in ["MAP", "Precision"]:
+                name = f"{name_}_{i}_{t}"
+                self.metrics[name](
+                    # outputs["pred1"][:, i],
+                    # outputs["pred1"][:, i] ** 2
+                    outputs["i1"],
+                    outputs["pred1"][:, i],
+                    outputs["y"] == i,
+                )
+
+    def shared_epoch_end(self, name_):
+        for i in range(self.output_dim - 1):
+            for t in ["MAP", "Precision"]:
+                name = f"{name_}_{i}_{t}"
+                self.log(name, self.metrics[name].compute())
 
     def validation_step_end(self, outputs):
         self.shared_val_step_end(outputs, "val")
 
     def test_step_end(self, outputs):
         self.shared_val_step_end(outputs, "test")
+
+    def validation_epoch_end(self, outputs):
+        self.shared_epoch_end("val")
+
+    def test_epoch_end(self, outputs):
+        self.shared_epoch_end("test")
 
     def configure_optimizers(self):
         return geoopt.optim.RiemannianAdam(self.parameters(), lr=self.learning_rate)

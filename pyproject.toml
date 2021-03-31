@@ -35,8 +35,9 @@ scipy = "^1.6.2"
 pandas = "^1.2.3"
 openpyxl = "^3.0.7"
 geoopt = {git = "https://github.com/gatoniel/geoopt.git", rev = "62855ff"}
-torchmetrics = {git = "https://github.com/PyTorchLightning/metrics.git"}
 pytorch-lightning = "^1.2.6"
+torchmetrics = {git = "https://github.com/PyTorchLightning/metrics.git", rev = "f06488faf79d4f4792cd392e964870d4898dde45"}
+torchvision = "^0.9.1"
 
 [tool.poetry.dev-dependencies]
 mypy = "^0.812"

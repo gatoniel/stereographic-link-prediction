@@ -47,13 +47,15 @@ class BacillusSubtilisSwarming(pl.LightningDataModule):
         replica: int = 1,
         *,
         batch_size: int = 64,
-        num_workers: int = 8,
+        batch_size_val: int = 2 * 4096,
+        num_workers: int = 20,
     ):
         super().__init__()
         self.data_dir = data_dir
         self.replica = replica
 
         self.batch_size = batch_size
+        self.batch_size_val = batch_size_val
         self.num_workers = num_workers
 
     def prepare_data(self):
@@ -112,8 +114,13 @@ class BacillusSubtilisSwarming(pl.LightningDataModule):
 
             self.valid_dataset = ValLinkPredictionDataset(val_edges, node_features)
 
+            print(f"Train set length: {len(self.train_dataset)}")
+            print(f"Validation set length: {len(self.valid_dataset)}")
+
         if stage == "test" or stage is None:
             self.test_dataset = ValLinkPredictionDataset(test_edges, node_features)
+
+            print(f"Test set length: {len(self.test_dataset)}")
 
     def train_dataloader(self):
         return DataLoader(
@@ -126,7 +133,7 @@ class BacillusSubtilisSwarming(pl.LightningDataModule):
     def val_dataloader(self):
         return DataLoader(
             self.valid_dataset,
-            batch_size=self.batch_size,
+            batch_size=self.batch_size_val,
             num_workers=self.num_workers,
             pin_memory=True,
         )
@@ -134,7 +141,7 @@ class BacillusSubtilisSwarming(pl.LightningDataModule):
     def test_dataloader(self):
         return DataLoader(
             self.test_dataset,
-            batch_size=self.batch_size,
+            batch_size=self.batch_size_val,
             num_workers=self.num_workers,
             pin_memory=True,
         )
