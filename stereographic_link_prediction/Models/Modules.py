@@ -259,9 +259,7 @@ class LinkPredictionModule(pl.LightningModule):
                     f"{name_}_hyperplanes_{i}",
                     hyperplanes_to_png(
                         mf.take_submanifold_value(layer.point, 0).squeeze(),
-                        mf.take_submanifold_value(
-                            layer.direction, 0
-                        ).squeeze(),
+                        mf.take_submanifold_value(layer.direction, 0).squeeze(),
                         mf.manifolds[0],
                     ),
                     self.step[name_],
@@ -281,6 +279,4 @@ class LinkPredictionModule(pl.LightningModule):
         self.shared_epoch_end(outputs, "test")
 
     def configure_optimizers(self):
-        return geoopt.optim.RiemannianAdam(
-            self.parameters(), lr=self.learning_rate
-        )
+        return geoopt.optim.RiemannianAdam(self.parameters(), lr=self.learning_rate)

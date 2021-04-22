@@ -21,12 +21,8 @@ def plot_connections(ax, z1_, z2_, y_, manifold):
     t = torch.linspace(0, 1, 50).unsqueeze(-1).repeat(1, 2).type_as(z1_)
     for i in range(z1.shape[0]):
         if y[i] >= 0:
-            geodesic = (
-                manifold.geodesic(t, z1_[i, :], z2_[i, :]).detach().cpu()
-            )
-            ax.plot(
-                geodesic[:, 0], geodesic[:, 1], color=colors[y[i]], alpha=0.5
-            )
+            geodesic = manifold.geodesic(t, z1_[i, :], z2_[i, :]).detach().cpu()
+            ax.plot(geodesic[:, 0], geodesic[:, 1], color=colors[y[i]], alpha=0.5)
 
 
 def fig_poincare_ball(manifold):
@@ -34,9 +30,7 @@ def fig_poincare_ball(manifold):
     ax.set_aspect(aspect=1)
 
     ax.add_patch(
-        plt.Circle(
-            (0, 0), manifold.radius.item(), edgecolor="black", facecolor="none"
-        )
+        plt.Circle((0, 0), manifold.radius.item(), edgecolor="black", facecolor="none")
     )
 
     return fig, ax
@@ -62,9 +56,7 @@ def plot_hyperplanes(ax, points_, direction_, manifold):
     t = torch.linspace(-2, 2, 500).unsqueeze(-1).repeat(1, 2).type_as(points_)
     for i in range(points.shape[0]):
         geodesic = (
-            manifold.geodesic_unit(t, points_[i, :], orthogonal[i, :])
-            .detach()
-            .cpu()
+            manifold.geodesic_unit(t, points_[i, :], orthogonal[i, :]).detach().cpu()
         )
         ax.plot(geodesic[:, 0], geodesic[:, 1], color="black", alpha=0.5)
 

@@ -29,9 +29,7 @@ class Citation2(pl.LightningDataModule):
     def setup(self, stage: str):
         dataset = LinkPropPredDataset("ogbl-citation2", root=self.data_dir)
         node_features = dataset[0]["node_feat"]
-        node_features = (
-            node_features - node_features.mean()
-        ) / node_features.std()
+        node_features = (node_features - node_features.mean()) / node_features.std()
 
         split_edge = dataset.get_edge_split()
 

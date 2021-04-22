@@ -60,13 +60,9 @@ class ValLinkPredictionDataset(Dataset):
         self.node_features = node_features.astype(np.float32)
 
         total_num_nodes = self.node_features.shape[0]
-        connection_matrix = -np.ones(
-            (total_num_nodes, total_num_nodes), dtype=int
-        )
+        connection_matrix = -np.ones((total_num_nodes, total_num_nodes), dtype=int)
         for i in range(self.edges.shape[0]):
-            connection_matrix[self.edges[i, 0], self.edges[i, 1]] = self.edges[
-                i, 2
-            ]
+            connection_matrix[self.edges[i, 0], self.edges[i, 1]] = self.edges[i, 2]
 
         empty_rows = connection_matrix == -1
         empty_inds = empty_rows.all(axis=1)
@@ -80,9 +76,7 @@ class ValLinkPredictionDataset(Dataset):
 
         connection_matrix = connection_matrix.reshape(-1, 3)
         diagonal_inds = connection_matrix[:, 0] == connection_matrix[:, 1]
-        self.connection_matrix = connection_matrix[
-            np.logical_not(diagonal_inds), :
-        ]
+        self.connection_matrix = connection_matrix[np.logical_not(diagonal_inds), :]
 
     def __len__(self):
         return self.connection_matrix.shape[0]

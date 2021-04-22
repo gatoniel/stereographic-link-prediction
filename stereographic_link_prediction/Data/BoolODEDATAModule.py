@@ -45,9 +45,7 @@ class GSD(pl.LightningDataModule):
         reg = pd.read_csv(os.path.join(self.data_dir, self.ref_networks))
 
         node_features = data.to_numpy()
-        node_features = (
-            node_features - node_features.mean()
-        ) / node_features.std()
+        node_features = (node_features - node_features.mean()) / node_features.std()
 
         genes = data.index
 
@@ -82,17 +80,13 @@ class GSD(pl.LightningDataModule):
                 train_edges, train_nodes, node_features
             )
 
-            self.valid_dataset = ValLinkPredictionDataset(
-                val_edges, node_features
-            )
+            self.valid_dataset = ValLinkPredictionDataset(val_edges, node_features)
 
             print(f"Train set length: {len(self.train_dataset)}")
             print(f"Validation set length: {len(self.valid_dataset)}")
 
         if stage == "test" or stage is None:
-            self.test_dataset = ValLinkPredictionDataset(
-                test_edges, node_features
-            )
+            self.test_dataset = ValLinkPredictionDataset(test_edges, node_features)
 
             print(f"Test set length: {len(self.test_dataset)}")
 

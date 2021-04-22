@@ -22,9 +22,7 @@ def Linears(
         nn.BatchNorm1d(hidden_dim),
     ]
     for i in range(depths):
-        linears.append(
-            nn.Linear(in_features=hidden_dim, out_features=hidden_dim)
-        )
+        linears.append(nn.Linear(in_features=hidden_dim, out_features=hidden_dim))
         linears.append(nn.ReLU())
         linears.append(nn.BatchNorm1d(hidden_dim))
     linears.append(nn.Linear(in_features=hidden_dim, out_features=output_dim))
@@ -125,9 +123,7 @@ class LayerDist2Plane(torch.nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         return (
-            self.manifold.dist2plane(
-                x, self.point, self.direction, signed=True
-            )
+            self.manifold.dist2plane(x, self.point, self.direction, signed=True)
             + self.bias
         ).transpose(1, 0)
 

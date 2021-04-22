@@ -62,13 +62,9 @@ class BacillusSubtilisSwarming(pl.LightningDataModule):
         pass
 
     def setup(self, stage: str):
-        counts, regulations, translation = read_data(
-            self.data_dir, self.replica
-        )
+        counts, regulations, translation = read_data(self.data_dir, self.replica)
         node_features = counts.T.to_numpy()
-        node_features = (
-            node_features - node_features.mean()
-        ) / node_features.std()
+        node_features = (node_features - node_features.mean()) / node_features.std()
 
         genes = counts.columns
         translation.index = translation["Gene name in subtiwiki"]
@@ -101,9 +97,7 @@ class BacillusSubtilisSwarming(pl.LightningDataModule):
             except KeyError:
                 pass
         edge_nodes = np.array(edge_nodes)
-        other_nodes = np.setdiff1d(
-            np.arange(node_features.shape[0]), edge_nodes
-        )
+        other_nodes = np.setdiff1d(np.arange(node_features.shape[0]), edge_nodes)
         self.edges = np.array(edges)
 
         self.input_dim = node_features.shape[1]
@@ -118,17 +112,13 @@ class BacillusSubtilisSwarming(pl.LightningDataModule):
                 train_edges, train_nodes, node_features
             )
 
-            self.valid_dataset = ValLinkPredictionDataset(
-                val_edges, node_features
-            )
+            self.valid_dataset = ValLinkPredictionDataset(val_edges, node_features)
 
             print(f"Train set length: {len(self.train_dataset)}")
             print(f"Validation set length: {len(self.valid_dataset)}")
 
         if stage == "test" or stage is None:
-            self.test_dataset = ValLinkPredictionDataset(
-                test_edges, node_features
-            )
+            self.test_dataset = ValLinkPredictionDataset(test_edges, node_features)
 
             print(f"Test set length: {len(self.test_dataset)}")
 
