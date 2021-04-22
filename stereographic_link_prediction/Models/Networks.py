@@ -19,15 +19,19 @@ def Linears(
     linears = [
         nn.Linear(in_features=input_dim, out_features=hidden_dim),
         nn.ReLU(),
+        nn.BatchNorm1d(hidden_dim),
     ]
     for i in range(depths):
-        linears.append(nn.Linear(in_features=hidden_dim, out_features=hidden_dim))
+        linears.append(
+            nn.Linear(in_features=hidden_dim, out_features=hidden_dim)
+        )
         linears.append(nn.ReLU())
+        linears.append(nn.BatchNorm1d(hidden_dim))
     linears.append(nn.Linear(in_features=hidden_dim, out_features=output_dim))
     return nn.Sequential(*linears)
 
 
-class EncoderWrapped(torch.nn.Module):
+class EncoderWrappedStochastic(torch.nn.Module):
     def __init__(
         self,
         input_dim: int,
@@ -49,6 +53,29 @@ class EncoderWrapped(torch.nn.Module):
         mu = self.manifold.expmap0(x[..., 0])
         sigma = F.softplus(x[..., 1]) + self.eta
         return mu, sigma
+
+
+class EncoderWrapped(torch.nn.Module):
+    def __init__(
+        self,
+        input_dim: int,
+        latent_dim: int,
+        hidden_dim: int,
+        manifold,
+        *,
+        depths: int = 1,
+        eta: float = 1e-5,
+    ):
+        super().__init__()
+        self.latent_dim = latent_dim
+        self.eta = eta
+        self.linears = Linears(input_dim, latent_dim, hidden_dim, depths)
+        self.manifold = manifold
+
+    def forward(self, x):
+        x = self.linears(x)
+        mu = self.manifold.expmap0(x)
+        return mu
 
 
 class DecoderWrapped(torch.nn.Module):
@@ -98,7 +125,9 @@ class LayerDist2Plane(torch.nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         return (
-            self.manifold.dist2plane(x, self.point, self.direction, signed=True)
+            self.manifold.dist2plane(
+                x, self.point, self.direction, signed=True
+            )
             + self.bias
         ).transpose(1, 0)
 
