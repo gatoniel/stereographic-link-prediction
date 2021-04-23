@@ -44,9 +44,9 @@ class LinkPredictionModule(pl.LightningModule):
         # self.output_dim = datamodule.output_dim + 1
 
         manifolds = [
-            (PoincareBall(), hparams.hyperbolic_dim),
-            (SphereProjection(), hparams.spherical_dim),
-            (Stereographic(k=0), hparams.euclidean_dim),
+            (PoincareBall(learnable=True), hparams.hyperbolic_dim),
+            (SphereProjection(learnable=True), hparams.spherical_dim),
+            (Stereographic(k=0, learnable=True), hparams.euclidean_dim),
         ]
         manifolds = tuple((m for m in manifolds if m[1] > 0))
         self.manifold = StereographicProductManifold(*manifolds)
@@ -259,7 +259,9 @@ class LinkPredictionModule(pl.LightningModule):
                     f"{name_}_hyperplanes_{i}",
                     hyperplanes_to_png(
                         mf.take_submanifold_value(layer.point, 0).squeeze(),
-                        mf.take_submanifold_value(layer.direction, 0).squeeze(),
+                        mf.take_submanifold_value(
+                            layer.direction, 0
+                        ).squeeze(),
                         mf.manifolds[0],
                     ),
                     self.step[name_],
@@ -279,4 +281,6 @@ class LinkPredictionModule(pl.LightningModule):
         self.shared_epoch_end(outputs, "test")
 
     def configure_optimizers(self):
-        return geoopt.optim.RiemannianAdam(self.parameters(), lr=self.learning_rate)
+        return geoopt.optim.RiemannianAdam(
+            self.parameters(), lr=self.learning_rate
+        )
