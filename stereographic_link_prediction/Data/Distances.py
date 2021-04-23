@@ -37,9 +37,9 @@ class DistancesDataset(Dataset):
 class DistancesDataModule(pl.LightningDataModule):
     def __init__(
         self,
+        *,
         data_dir: str,
         replica: int = 1,
-        *,
         batch_size: int = 1024,
         num_workers: int = 20,
     ):
@@ -53,6 +53,18 @@ class DistancesDataModule(pl.LightningDataModule):
 
     def __len__(self):
         return self.length
+
+    @staticmethod
+    def add_model_specific_args(parent_parser):
+        parent_parser = parent_parser.add_argument_group("DistancesDataModule")
+
+        parent_parser.add_argument(
+            "--replica", type=int, default=1, choices=[1, 2, 3]
+        )
+        parent_parser.add_argument("--data_dir", type=str, default="./data")
+        parent_parser.add_argument("--batch_size", type=int, default=1024)
+        parent_parser.add_argument("--num_workers", type=int, default=10)
+        return parent_parser
 
     def prepare_data(self):
         pass

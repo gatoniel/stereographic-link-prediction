@@ -1,3 +1,4 @@
+from typing import Union
 import torch
 import pytorch_lightning as pl
 import geoopt
@@ -11,40 +12,59 @@ from geoopt import (
     ManifoldParameter,
 )
 
+from ..Data.Distances import DistancesDataModule
+
 
 class MDS(pl.LightningModule):
     def __init__(
         self,
-        hparams,
-        datamodule: pl.LightningDataModule,
+        datamodule: Union[pl.LightningDataModule, None] = None,
         *,
-        reconstruction_criterion=None,
-        alpha: int = 1,
+        hyperbolic_dim: int = 2,
+        spherical_dim: int = 0,
+        euclidean_dim: int = 0,
+        learning_rate: float = 0.5,
+        use_scheduler: bool = False,
+        learnable_curvature: bool = False,
+        learnable_scale: bool = False,
+        data_dir: str = "./data",
+        replica: int = 1,
+        batch_size: int = 1024,
+        num_workers: int = 20,
     ):
         super().__init__()
-        # self.save_hyperparameters()
-        self.datamodule = datamodule
+        if datamodule is None:
+            self.datamodule = DistancesDataModule(
+                data_dir=data_dir,
+                replica=replica,
+                batch_size=batch_size,
+                num_workers=num_workers,
+            )
+            self.datamodule.prepare_data()
+            self.datamodule.setup("fit")
+        else:
+            self.datamodule = datamodule
         self.num_points = len(self.datamodule)
 
         manifolds = [
             (
-                PoincareBall(learnable=hparams.learnable_curvature),
-                hparams.hyperbolic_dim,
+                PoincareBall(learnable=learnable_curvature),
+                hyperbolic_dim,
             ),
             (
-                SphereProjection(learnable=hparams.learnable_curvature),
-                hparams.spherical_dim,
+                SphereProjection(learnable=learnable_curvature),
+                spherical_dim,
             ),
             (
-                Stereographic(k=0, learnable=hparams.learnable_curvature),
-                hparams.euclidean_dim,
+                Stereographic(k=0, learnable=learnable_curvature),
+                euclidean_dim,
             ),
         ]
         manifolds = tuple((m for m in manifolds if m[1] > 0))
         self.manifold = StereographicProductManifold(*manifolds)
         self.latent_dim = sum([m[1] for m in manifolds])
-        self.learning_rate = hparams.learning_rate
-        self.use_scheduler = hparams.use_scheduler
+        self.learning_rate = learning_rate
+        self.use_scheduler = use_scheduler
 
         self.points = ManifoldParameter(
             self.manifold.random(self.num_points, self.latent_dim),
@@ -110,6 +130,9 @@ class MDS(pl.LightningModule):
             self.datamodule.plot(self.points, self.manifold.manifolds[0]),
             self.trainer.current_epoch,
         )
+
+    def train_dataloader(self):
+        return self.datamodule.train_dataloader()
 
     def configure_optimizers(self):
         optimizer = geoopt.optim.RiemannianAdam(
