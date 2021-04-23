@@ -44,6 +44,7 @@ class MDS(pl.LightningModule):
         self.manifold = StereographicProductManifold(*manifolds)
         self.latent_dim = sum([m[1] for m in manifolds])
         self.learning_rate = hparams.learning_rate
+        self.use_scheduler = hparams.use_scheduler
 
         self.points = ManifoldParameter(
             self.manifold.random(self.num_points, self.latent_dim),
@@ -66,6 +67,7 @@ class MDS(pl.LightningModule):
         parser.add_argument("--euclidean_dim", type=int, default=0)
 
         parser.add_argument("--learning_rate", type=float, default=1)
+        parser.add_argument("--use_scheduler", action="store_true")
 
         parser.add_argument("--learnable_curvature", action="store_true")
         parser.add_argument("--learnable_scale", action="store_true")
@@ -110,6 +112,17 @@ class MDS(pl.LightningModule):
         )
 
     def configure_optimizers(self):
-        return geoopt.optim.RiemannianAdam(
+        optimizer = geoopt.optim.RiemannianAdam(
             self.parameters(), lr=self.learning_rate
         )
+        if self.use_scheduler:
+            scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+                optimizer, factor=0.5
+            )
+            return {
+                "optimizer": optimizer,
+                "lr_scheduler": scheduler,
+                "monitor": "train_loss",
+            }
+        else:
+            return optimizer

@@ -2,6 +2,7 @@ from argparse import ArgumentParser
 import pytorch_lightning as pl
 
 from pytorch_lightning import loggers as pl_loggers
+from pytorch_lightning.callbacks import LearningRateMonitor
 
 from stereographic_link_prediction.Data.Distances import (
     DistancesDataModule,
@@ -17,6 +18,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--datamodule", choices=["toy", "data"], default="data"
     )
+    parser.add_argument("--auto_lr_find", action="store_true")
 
     hparams = parser.parse_args()
 
@@ -30,6 +32,8 @@ if __name__ == "__main__":
     datamodule.setup("fit")
     module = MDS(hparams, datamodule)
 
+    lr_monitor = LearningRateMonitor(logging_interval="step")
+
     trainer = pl.Trainer(
         gpus=1,
         precision=64,
@@ -38,6 +42,7 @@ if __name__ == "__main__":
         log_every_n_steps=2,
         # deterministic=True,
         profiler="simple",
+        auto_lr_find=hparams.auto_lr_find,
         # reload_dataloaders_every_epoch=True,
         # max_epochs=10,
         # gradient_clip_val=0.5,
@@ -45,6 +50,8 @@ if __name__ == "__main__":
         # track_grad_norm=2,
         # overfit_batches=10,
         # num_sanity_val_steps=0,
+        callbacks=[lr_monitor],
     )
 
+    trainer.tune(module, datamodule=datamodule)
     trainer.fit(module, datamodule=datamodule)

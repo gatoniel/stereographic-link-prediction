@@ -1,4 +1,5 @@
 import os
+import yaml
 import torch
 import geoopt
 import numpy as np
@@ -73,6 +74,10 @@ class DistancesDataModule(pl.LightningDataModule):
             .T[distances.index]
             .T.to_numpy()
         )
+        with open(
+            os.path.join(self.data_dir, f"Rep{self.replica}_outliers.yaml")
+        ) as f:
+            remove_inds = yaml.load(f, Loader=yaml.SafeLoader)["remove_inds"]
 
         index = [i.replace("_", "") for i in distances.index]
         spacetime = spacetime[index].T
@@ -80,11 +85,12 @@ class DistancesDataModule(pl.LightningDataModule):
         self.space = spacetime["Position in swarm"].to_numpy()
 
         distances = distances.T.to_numpy()
-        distances = np.delete(distances, 69, 0)
-        distances = np.delete(distances, 69, 1)
-        self.time = np.delete(self.time, 69, 0)
-        self.space = np.delete(self.space, 69, 0)
-        self.flat_mds = np.delete(flat_mds, 69, 0)
+
+        distances = np.delete(distances, remove_inds, 0)
+        distances = np.delete(distances, remove_inds, 1)
+        self.time = np.delete(self.time, remove_inds, 0)
+        self.space = np.delete(self.space, remove_inds, 0)
+        self.flat_mds = np.delete(flat_mds, remove_inds, 0)
         self.length = distances.shape[0]
 
         if stage == "fit" or stage is None:
