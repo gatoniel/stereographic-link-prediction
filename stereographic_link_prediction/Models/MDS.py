@@ -94,6 +94,8 @@ class MDS(pl.LightningModule):
 
         self.log("train_loss", loss)
         self.log("scale", self.scale.detach())
+        self.log("min_d_hat", d_hat_ij.min())
+        self.log("max_d_hat", d_hat_ij.max())
         for i, mf in enumerate(self.manifold.manifolds):
             self.log(f"curvature{i}", mf.k)
 

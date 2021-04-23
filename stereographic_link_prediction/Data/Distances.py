@@ -20,6 +20,10 @@ class DistancesDataset(Dataset):
         self.indexes = torch.combinations(
             torch.arange(self.distances.shape[0]), r=2
         ).numpy()
+        min_dist = self.distances[self.indexes[:, 0], self.indexes[:, 1]].min()
+        max_dist = self.distances[self.indexes[:, 0], self.indexes[:, 1]].max()
+        print("min dist: ", min_dist)
+        print("max dist: ", max_dist)
 
     def __len__(self):
         return self.indexes.shape[0]
@@ -35,7 +39,7 @@ class DistancesDataModule(pl.LightningDataModule):
         data_dir: str,
         replica: int = 1,
         *,
-        batch_size: int = 64,
+        batch_size: int = 1024,
         num_workers: int = 20,
     ):
         super().__init__()
@@ -61,6 +65,15 @@ class DistancesDataModule(pl.LightningDataModule):
             os.path.join(self.data_dir, f"Rep{self.replica}_spacetime.csv"),
             index_col="sample #",
         ).T
+        flat_mds = (
+            pd.read_csv(
+                os.path.join(self.data_dir, f"Rep{self.replica}_mds.csv"),
+                index_col=0,
+            )
+            .T[distances.index]
+            .T.to_numpy()
+        )
+
         index = [i.replace("_", "") for i in distances.index]
         spacetime = spacetime[index].T
         self.time = spacetime["Timepoint after lag phase"].to_numpy()
@@ -71,6 +84,7 @@ class DistancesDataModule(pl.LightningDataModule):
         distances = np.delete(distances, 69, 1)
         self.time = np.delete(self.time, 69, 0)
         self.space = np.delete(self.space, 69, 0)
+        self.flat_mds = np.delete(flat_mds, 69, 0)
         self.length = distances.shape[0]
 
         if stage == "fit" or stage is None:
@@ -112,7 +126,7 @@ class DistancesDataModule(pl.LightningDataModule):
             shuffle=True,
         )
 
-    def plot(self, points, manifold):
+    def plot(self, points, manifold, return_fig=False):
         points = points.detach().cpu()
         fig, axes = plot.fig_poincare_ball(manifold, (1, 2), (10, 5))
         titles = ["time", "space"]
@@ -151,14 +165,17 @@ class DistancesDataModule(pl.LightningDataModule):
         # for i in range(2):
         #     axes[i].legend()
 
-        return plot.fig_to_img(fig)
+        if return_fig:
+            return fig
+        else:
+            return plot.fig_to_img(fig)
 
 
 class RandomDistancesDataModule(pl.LightningDataModule):
     def __init__(
         self,
         *,
-        batch_size: int = 64,
+        batch_size: int = 1024,
         num_workers: int = 20,
     ):
         super().__init__()
