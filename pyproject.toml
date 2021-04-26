@@ -10,7 +10,7 @@ style = "https://raw.githubusercontent.com/wemake-services/wemake-python-stylegu
 [tool.poetry]
 name = "stereographic-link-prediction"
 description = "A VAE on basis of the kappa-stereographic models from geoopt for link prediction and node classification."
-version = "0.1.0"
+version = "0.1.1-alpha.0"
 license = "MIT"
 
 authors = []
