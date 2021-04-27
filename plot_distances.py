@@ -17,7 +17,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     datamodule = DistancesDataModule(
-        "./data", replica=args.replica, batch_size=None
+        data_dir="./data", replica=args.replica, batch_size=None
     )
     datamodule.setup("fit")
     for i in tqdm(range(len(datamodule))):
@@ -46,6 +46,8 @@ if __name__ == "__main__":
     fig = datamodule.plot(
         torch.tensor(datamodule.flat_mds), geoopt.PoincareBall(), True
     )
+    for ax in fig.axes:
+        ax.set_aspect("auto")
     fig.savefig(f"/mnt/d/distances/mds.png")
     plt.close(fig)
 
