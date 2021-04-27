@@ -111,10 +111,16 @@ class MDS(pl.LightningModule):
         # a = (d_ij * d_hat_ij).sum() / d_hat_ij.pow(2).sum()
 
         # loss = torch.mean((d_ij - self.log_scale.exp() * d_hat_ij) ** 2)
-        loss = torch.mean((d_ij - d_hat_ij) ** 2)
         # loss = torch.mean((d_ij - a * d_hat_ij) ** 2)
+        loss = torch.mean((d_ij - d_hat_ij) ** 2)
+        # Stress majorization according to
+        # https://en.wikipedia.org/wiki/Stress_majorization
+        # But this relies on euclidean distances.
+        # C = d_ij.pow(2).mean()
+        # trace
 
         self.log("train_loss", loss)
+        # self.log("train_stress", stress)
         self.log("scale", self.scale.detach())
         self.log("min_d_hat", d_hat_ij.min())
         self.log("max_d_hat", d_hat_ij.max())
