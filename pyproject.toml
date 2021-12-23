@@ -47,7 +47,7 @@ jsonargparse = {extras = ["signatures"], version = "^3.10.1"}
 mypy = "^0.812"
 
 wemake-python-styleguide = "^0.15"
-flake8-pytest-style = "^1.4"
+flake8-pytest-style = "^1.6"
 nitpick = "^0.26"
 
 safety = "^1.10"
